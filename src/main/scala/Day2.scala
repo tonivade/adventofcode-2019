@@ -6,19 +6,21 @@ import scala.annotation.tailrec
 
 object Day2 {
 
+  def operation(program: ArraySeq[Int], current: Int, operation: (Int, Int) => Int) {
+    val a = program(program(current + 1))
+    val b = program(program(current + 2))
+    program.update(program(current + 3), operation(a, b))
+  }
+
   @tailrec
   def computer(program: ArraySeq[Int], current: Int = 0): ArraySeq[Int] = {
     program(current) match {
       case 1 => {
-        val a = program(program(current + 1))
-        val b = program(program(current + 2))
-        program.update(program(current + 3), a + b)
+        operation(program, current, (a, b) => a + b)
         computer(program, current + 4)
       }
       case 2 => {
-        val a = program(program(current + 1))
-        val b = program(program(current + 2))
-        program.update(program(current + 3), a * b)
+        operation(program, current, (a, b) => a * b)
         computer(program, current + 4)
       }
       case 99 => program
