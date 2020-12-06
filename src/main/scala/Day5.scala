@@ -75,7 +75,7 @@ object Day5 {
           run(current + 2)
         }
         case OP_OUTPUT => {
-          val a = param(POSITION_MODE, current + 1)
+          val a = param(mode1(mode), current + 1)
           write(a)
           run(current + 2)
         }
@@ -140,7 +140,7 @@ object Day5Part1 extends App {
 object Day5Part2 extends App {
   import Day5._
 
-  println("Day5 Part1")
+  println("Day5 Part2")
 
   println(runProgram(program, Input(5)))
 }
