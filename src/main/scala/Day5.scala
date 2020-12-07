@@ -123,8 +123,11 @@ object Day5 {
     }
   }
 
-  var program = Source.fromFile("src/main/resources/input-day5.txt").getLines
-    .flatMap(_.split(',')).map(_.toInt).toArray
+  def loadProgram(input: String): Array[Int] =
+    Source.fromFile(s"src/main/resources/$input").getLines
+      .flatMap(_.split(',')).map(_.toInt).toArray
+
+  var program = loadProgram("input-day5.txt")
 
   def runProgram(program: Array[Int], input: Input = Input.empty): Output = 
     Computer(program.to[ArraySeq], input.to[ListBuffer]).run()

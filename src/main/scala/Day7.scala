@@ -3,7 +3,7 @@ package adventofcode
 import scala.io.Source
 
 object Day7 {
-  import Day5.{runProgram, Input}
+  import Day5.{runProgram, loadProgram, Input}
 
   def compute(program: Array[Int]): List[Int] =
     (0 to 4).permutations.map(sequence(program, _)).toList
@@ -16,15 +16,13 @@ object Day7 {
     runProgram(program, Input(sequence(4), outD))(0)
   }
 
-  var program = Source.fromFile("src/main/resources/input-day7.txt").getLines
-    .flatMap(_.split(',')).map(_.toInt).toArray
-
+  val program = loadProgram("input-day7.txt")
 }
 
 object Day7Part1 extends App {
   import Day7._
 
-  println("Day7 Part2")
+  println("Day7 Part1")
 
   println(compute(program).max)
 }
@@ -41,4 +39,6 @@ object Day7Test extends App {
 
   val program3 = Array(3,31,3,32,1002,32,10,32,1001,31,-2,31,1007,31,0,33,1002,33,7,33,1,33,31,31,1,32,31,31,4,31,99,0,0,0)
   assert(compute(program3).max == 65210)
+
+  println("OK")
 }
