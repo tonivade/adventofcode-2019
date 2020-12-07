@@ -17,7 +17,7 @@ object Day6 {
     orbits.get(name).fold(0)(1 + count(_, orbits))
   
   def search(name: String, orbits: Map[String, String]): List[String] =
-    orbits.get(name).fold(List(name))(List(name) ++ search(_, orbits))
+    orbits.get(name).fold(name :: Nil)(name :: search(_, orbits))
 
   def total(orbits: Map[String, String]): Int =
     (orbits.keys ++ orbits.values).toSeq.map(count(_, orbits)).sum
