@@ -14,11 +14,12 @@ object Day7 {
     (5 to 9).permutations.map(feedback(program, _)).toList
 
   def sequence(program: Array[Int], sequence: IndexedSeq[Int]): Int = {
-    val outA = runProgram(program, Input(sequence(0), 0)).output(0)
-    val outB = runProgram(program, Input(sequence(1), outA)).output(0)
-    val outC = runProgram(program, Input(sequence(2), outB)).output(0)
-    val outD = runProgram(program, Input(sequence(3), outC)).output(0)
-    runProgram(program, Input(sequence(4), outD)).output(0)
+    val outA = runProgram(program, Input(sequence(0), 0))
+    val outB = runProgram(program, Input(sequence(1), outA.output(0)))
+    val outC = runProgram(program, Input(sequence(2), outB.output(0)))
+    val outD = runProgram(program, Input(sequence(3), outC.output(0)))
+    val outE = runProgram(program, Input(sequence(4), outD.output(0)))
+    outE.output(0)
   }
 
   def feedback(program: Array[Int], sequence: IndexedSeq[Int]): Int = {

@@ -94,6 +94,12 @@ object Day5 {
     def mode1(mode: Int) = mode % 10
     def mode2(mode: Int) = mode1(mode / 10)
 
+    def pause(current: Int): State = 
+      State(current, program, input, output, paused = true)
+
+    def stop(current: Int): State = 
+      State(current, program, input, output, stopped = true)
+
     @tailrec
     final def run(current: Int = 0): State = {
 //      debug(current)
@@ -113,7 +119,7 @@ object Day5 {
               update(p, value)
               run(current + 2)
             }
-            case None => State(current, program, input, output, true, false)
+            case None => pause(current)
           }
         }
         case OP_OUTPUT => {
@@ -133,7 +139,7 @@ object Day5 {
         case OP_EQUALS => {
           run(comparation(mode, current, _ == _))
         }
-        case OP_HALT => State(current, program, input, output, false, true)
+        case OP_HALT => stop(current)
       }
     }
 
