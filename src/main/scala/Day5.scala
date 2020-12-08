@@ -30,12 +30,31 @@ object Day5 {
   val OP_EQUALS = 8
   val OP_HALT = 99
 
+  case class State(
+      current: Int, 
+      program: Program,
+      input: Input, 
+      output: Output, 
+      paused: Boolean = false, 
+      stopped: Boolean = false) {
+
+    def resume(newInput: Input): State = 
+      if (paused)
+        Computer(program, newInput).run(current)
+      else 
+        throw new IllegalStateException()
+  }
+
   case class Computer(
       program: Program, 
       input: Input = Input.empty, 
       output: Output = Output.empty) {
 
-    def read(): Int = input.remove(0)
+    def read(): Option[Int] = 
+      if (input.isEmpty) 
+        None
+      else
+        Some(input.remove(0))
 
     def write(value: Int): Unit = output.append(value)
 
@@ -76,7 +95,7 @@ object Day5 {
     def mode2(mode: Int) = mode1(mode / 10)
 
     @tailrec
-    final def run(current: Int = 0): Output = {
+    final def run(current: Int = 0): State = {
 //      debug(current)
       val command = program(current)
       val mode = command / 100
@@ -88,11 +107,14 @@ object Day5 {
           run(operation(mode, current, (a, b) => a * b))
         }
         case OP_INPUT => {
-          println("read: " + current)
-          val a = read()
-          val p = program(current + 1)
-          update(p, a)
-          run(current + 2)
+          read() match {
+            case Some(value) => {
+              val p = program(current + 1)
+              update(p, value)
+              run(current + 2)
+            }
+            case None => State(current, program, input, output, true, false)
+          }
         }
         case OP_OUTPUT => {
           val a = param(mode1(mode), current + 1)
@@ -111,7 +133,7 @@ object Day5 {
         case OP_EQUALS => {
           run(comparation(mode, current, _ == _))
         }
-        case OP_HALT => output
+        case OP_HALT => State(current, program, input, output, false, true)
       }
     }
 
@@ -130,11 +152,8 @@ object Day5 {
 
   var program = loadProgram("input-day5.txt")
 
-  def runProgram(program: Array[Int], input: Input = Input.empty): Output = 
+  def runProgram(program: Array[Int], input: Input = Input.empty): State = 
     Computer(program.to[ArraySeq], input).run()
-
-  def runProgram2(program: ArraySeq[Int], input: Input = Input.empty): Output = 
-    Computer(program, input).run()
 }
 
 object Day5Part1 extends App {
@@ -142,7 +161,7 @@ object Day5Part1 extends App {
 
   println("Day5 Part1")
 
-  println(runProgram(program, Input(1)))
+  println(runProgram(program, Input(1)).output)
 }
 
 object Day5Part2 extends App {
@@ -150,13 +169,13 @@ object Day5Part2 extends App {
 
   println("Day5 Part2")
 
-  println(runProgram(program, Input(5)))
+  println(runProgram(program, Input(5)).output)
 }
 
 object Day5Test extends App {
   import Day5._
   
-  assert(runProgram(program = Array(3, 0, 4, 0, 99), Input(1))(0) == 1)
+  assert(runProgram(program = Array(3, 0, 4, 0, 99), Input(1)).output(0) == 1)
 
   val c2 = Computer(Program(1002, 4, 3, 4, 33))
   c2.run()
@@ -167,33 +186,35 @@ object Day5Test extends App {
   assert(c3.program(4) == 99)
 
   val program1 = Array(3,9,8,9,10,9,4,9,99,-1,8)
-  assert(runProgram(program1, Input(8))(0) == 1)
-  assert(runProgram(program1, Input(9))(0) == 0)
+  assert(runProgram(program1, Input(8)).output(0) == 1)
+  assert(runProgram(program1, Input(9)).output(0) == 0)
 
   val program2 = Array(3,9,7,9,10,9,4,9,99,-1,8)
-  assert(runProgram(program2, Input(1))(0) == 1)
-  assert(runProgram(program2, Input(8))(0) == 0)
+  assert(runProgram(program2, Input(1)).output(0) == 1)
+  assert(runProgram(program2, Input(8)).output(0) == 0)
 
   val program3 = Array(3,3,1108,-1,8,3,4,3,99)
-  assert(runProgram(program3, Input(8))(0) == 1)
-  assert(runProgram(program3, Input(9))(0) == 0)
+  assert(runProgram(program3, Input(8)).output(0) == 1)
+  assert(runProgram(program3, Input(9)).output(0) == 0)
 
   val program4 = Array(3,3,1107,-1,8,3,4,3,99)
-  assert(runProgram(program4, Input(1))(0) == 1)
-  assert(runProgram(program4, Input(8))(0) == 0)
+  assert(runProgram(program4, Input(1)).output(0) == 1)
+  assert(runProgram(program4, Input(8)).output(0) == 0)
 
   val program5 = Array(3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9)
-  assert(runProgram(program5, Input(0))(0) == 0)
-  assert(runProgram(program5, Input(1))(0) == 1)
+  assert(runProgram(program5, Input(0)).output(0) == 0)
+  assert(runProgram(program5, Input(1)).output(0) == 1)
 
   val program6 = Array(3,3,1105,-1,9,1101,0,0,12,4,12,99,1)
-  assert(runProgram(program6, Input(0))(0) == 0)
-  assert(runProgram(program6, Input(1))(0) == 1)
+  assert(runProgram(program6, Input(0)).output(0) == 0)
+  assert(runProgram(program6, Input(1)).output(0) == 1)
 
   val programX = Array(3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
                        1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
                        999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99)
-  assert(runProgram(programX, Input(7))(0) == 999)
-  assert(runProgram(programX, Input(8))(0) == 1000)
-  assert(runProgram(programX, Input(9))(0) == 1001)
+  assert(runProgram(programX, Input(7)).output(0) == 999)
+  assert(runProgram(programX, Input(8)).output(0) == 1000)
+  assert(runProgram(programX, Input(9)).output(0) == 1001)
+
+  println("OK")
 }
