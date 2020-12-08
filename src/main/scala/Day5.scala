@@ -88,6 +88,7 @@ object Day5 {
           run(operation(mode, current, (a, b) => a * b))
         }
         case OP_INPUT => {
+          println("read: " + current)
           val a = read()
           val p = program(current + 1)
           update(p, a)
@@ -130,7 +131,10 @@ object Day5 {
   var program = loadProgram("input-day5.txt")
 
   def runProgram(program: Array[Int], input: Input = Input.empty): Output = 
-    Computer(program.to[ArraySeq], input.to[ListBuffer]).run()
+    Computer(program.to[ArraySeq], input).run()
+
+  def runProgram2(program: ArraySeq[Int], input: Input = Input.empty): Output = 
+    Computer(program, input).run()
 }
 
 object Day5Part1 extends App {
