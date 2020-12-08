@@ -77,11 +77,11 @@ object Day5 {
       if (operation(a)) b else current + 3
     }
 
-    def comparation(mode: Int, current: Int, compartion : (Int, Int) => Boolean): Int = {
+    def comparation(mode: Int, current: Int, operation: (Int, Int) => Boolean): Int = {
       val a = param(mode1(mode), current + 1)
       val b = param(mode2(mode), current + 2)
       val c = program(current + 3)
-      if (compartion(a, b)) 
+      if (operation(a, b)) 
         update(c, 1)
       else
         update(c, 0)
