@@ -64,30 +64,34 @@ object Day5 {
 
     def write(value: Long): Unit = output.append(value)
 
-    def param(mode: Int, current: Int, base: Int): Long =
+    def index(mode: Int, current: Int, base: Int): Int =
       mode match {
-        case POSITION_MODE => get(get(current).toInt)
-        case IMMEDIATE_MODE => get(current)
-        case RELATIVE_MODE => get(base + get(current).toInt)
+        case POSITION_MODE => get(current).toInt
+        case IMMEDIATE_MODE => current
+        case RELATIVE_MODE => base + get(current).toInt
       }
 
+    def value(mode: Int, current: Int, base: Int): Long =
+      get(index(mode, current, base))
+
     def operation(mode: Int, current: Int, base: Int, operation: (Long, Long) => Long): Int = {
-      val a = param(mode1(mode), current + 1, base)
-      val b = param(mode2(mode), current + 2, base)
-      update(get(current + 3).toInt, operation(a, b))
+      val a = value(mode1(mode), current + 1, base)
+      val b = value(mode2(mode), current + 2, base)
+      val c = index(mode3(mode), current + 3, base)
+      update(c, operation(a, b))
       current + 4
     }
 
     def jump(mode: Int, current: Int, base: Int, operation: Long => Boolean): Int = {
-      val a = param(mode1(mode), current + 1, base)
-      val b = param(mode2(mode), current + 2, base).toInt
+      val a = value(mode1(mode), current + 1, base)
+      val b = value(mode2(mode), current + 2, base).toInt
       if (operation(a)) b else current + 3
     }
 
     def comparation(mode: Int, current: Int, base: Int, operation: (Long, Long) => Boolean): Int = {
-      val a = param(mode1(mode), current + 1, base)
-      val b = param(mode2(mode), current + 2, base)
-      val c = get(current + 3).toInt
+      val a = value(mode1(mode), current + 1, base)
+      val b = value(mode2(mode), current + 2, base)
+      val c = index(mode3(mode), current + 3, base)
       if (operation(a, b))
         update(c, 1)
       else
@@ -100,7 +104,7 @@ object Day5 {
       if (memory.length > current)
         memory.update(current, value)
       else {
-        val pad = Array.fill[Long]((current - memory.length) + 1)(0)
+        val pad = Array.fill[Long]((current - memory.length))(0) :+ value
         memory.append(pad:_*)
       }
     }
@@ -115,6 +119,7 @@ object Day5 {
 
     def mode1(mode: Int) = mode % 10
     def mode2(mode: Int) = mode1(mode / 10)
+    def mode3(mode: Int) = mode2(mode / 10)
 
     def pause(current: Int, base: Int): State = 
       State(current, base, memory, input, output, paused = true)
@@ -137,7 +142,7 @@ object Day5 {
         case OP_INPUT => {
           read() match {
             case Some(value) => {
-              val p = get(current + 1).toInt
+              val p = index(mode1(mode), current + 1, base)
               update(p, value)
               run(current + 2, base)
             }
@@ -145,7 +150,7 @@ object Day5 {
           }
         }
         case OP_OUTPUT => {
-          val a = param(mode1(mode), current + 1, base)
+          val a = value(mode1(mode), current + 1, base)
           write(a)
           run(current + 2, base)
         }
@@ -162,15 +167,18 @@ object Day5 {
           run(comparation(mode, current, base, _ == _), base)
         }
         case OP_INCR_RELATIVE => {
-          run(current + 2, base + param(mode1(mode), current + 1, base).toInt)
+          val a = value(mode1(mode), current + 1, base)
+          run(current + 2, base + a.toInt)
         }
-        case OP_HALT => stop(current, base)
+        case OP_HALT => {
+          stop(current, base)
+        }
       }
     }
 
-    def debug(current: Int = 0) {
-      println(s"computer pointer: $current")
-      println(memory)
+    def debug(current: Int, base: Int) {
+      println(s"current: $current, base: $base")
+      println(get(current), get(current + 1))
       println(input)
       println(output)
       println()
