@@ -7,12 +7,15 @@ import scala.collection.mutable.ArrayBuffer
 
 object Day5 {
 
-  type Program = Array[Int]
-  type Memory = ArrayBuffer[Int]
-  type Input = ListBuffer[Int]
-  type Output = ListBuffer[Int]
+  type Program = Array[Long]
+  type Memory = ArrayBuffer[Long]
+  type Input = ListBuffer[Long]
+  type Output = ListBuffer[Long]
   
-  val Program = Array
+  object Program {
+    def apply(elems: Long*): Program = Array(elems:_*)
+  }
+
   val Memory = ArrayBuffer
   val Input = ListBuffer
   val Output = ListBuffer
@@ -53,40 +56,38 @@ object Day5 {
       input: Input = Input.empty, 
       output: Output = Output.empty) {
 
-    def read(): Option[Int] = 
+    def read(): Option[Long] = 
       if (input.isEmpty) 
         None
       else
         Some(input.remove(0))
 
-    def write(value: Int): Unit = output.append(value)
+    def write(value: Long): Unit = output.append(value)
 
-    def param(mode: Int, current: Int, base: Int): Int = {
-//      println(s"mode:$mode,current:$current,base:$base")
+    def param(mode: Int, current: Int, base: Int): Long =
       mode match {
-        case POSITION_MODE => get(get(current))
+        case POSITION_MODE => get(get(current).toInt)
         case IMMEDIATE_MODE => get(current)
-        case RELATIVE_MODE => get(base + get(current))
+        case RELATIVE_MODE => get(base + get(current).toInt)
       }
-    }
 
-    def operation(mode: Int, current: Int, base: Int, operation: (Int, Int) => Int): Int = {
+    def operation(mode: Int, current: Int, base: Int, operation: (Long, Long) => Long): Int = {
       val a = param(mode1(mode), current + 1, base)
       val b = param(mode2(mode), current + 2, base)
-      update(get(current + 3), operation(a, b))
+      update(get(current + 3).toInt, operation(a, b))
       current + 4
     }
 
-    def jump(mode: Int, current: Int, base: Int, operation: Int => Boolean): Int = {
+    def jump(mode: Int, current: Int, base: Int, operation: Long => Boolean): Int = {
       val a = param(mode1(mode), current + 1, base)
-      val b = param(mode2(mode), current + 2, base)
+      val b = param(mode2(mode), current + 2, base).toInt
       if (operation(a)) b else current + 3
     }
 
-    def comparation(mode: Int, current: Int, base: Int, operation: (Int, Int) => Boolean): Int = {
+    def comparation(mode: Int, current: Int, base: Int, operation: (Long, Long) => Boolean): Int = {
       val a = param(mode1(mode), current + 1, base)
       val b = param(mode2(mode), current + 2, base)
-      val c = get(current + 3)
+      val c = get(current + 3).toInt
       if (operation(a, b))
         update(c, 1)
       else
@@ -94,17 +95,17 @@ object Day5 {
       current + 4
     }
 
-    def update(current: Int, value: Int): Unit = {
+    def update(current: Int, value: Long): Unit = {
       require(current >= 0, s"cannot write negative possitions from memory: $current")
       if (memory.length > current)
         memory.update(current, value)
       else {
-        val pad = Array.fill[Int]((current - memory.length) + 1)(0)
+        val pad = Array.fill[Long]((current - memory.length) + 1)(0)
         memory.append(pad:_*)
       }
     }
 
-    def get(current: Int): Int = {
+    def get(current: Int): Long = {
       require(current >= 0, s"cannot read negative possitions from memory: $current")
       if (memory.length > current)
         memory(current)
@@ -125,7 +126,7 @@ object Day5 {
     final def run(current: Int = 0, base: Int = 0): State = {
 //      debug(current)
       val command = get(current)
-      val mode = command / 100
+      val mode = (command / 100).toInt
       command % 100 match {
         case OP_SUM => {
           run(operation(mode, current, base, (a, b) => a + b), base)
@@ -136,7 +137,7 @@ object Day5 {
         case OP_INPUT => {
           read() match {
             case Some(value) => {
-              val p = get(current + 1)
+              val p = get(current + 1).toInt
               update(p, value)
               run(current + 2, base)
             }
@@ -161,7 +162,7 @@ object Day5 {
           run(comparation(mode, current, base, _ == _), base)
         }
         case OP_INCR_RELATIVE => {
-          run(current + 2, base + param(mode1(mode), current + 1, base))
+          run(current + 2, base + param(mode1(mode), current + 1, base).toInt)
         }
         case OP_HALT => stop(current, base)
       }
@@ -178,7 +179,7 @@ object Day5 {
 
   def loadProgram(input: String): Program =
     Source.fromFile(s"src/main/resources/$input").getLines
-      .flatMap(_.split(',')).map(_.toInt).toArray
+      .flatMap(_.split(',')).map(_.toLong).toArray
 
   var program = loadProgram("input-day5.txt")
 
@@ -215,31 +216,31 @@ object Day5Test extends App {
   c3.run()
   assert(c3.memory(4) == 99)
 
-  val program1 = Array(3,9,8,9,10,9,4,9,99,-1,8)
+  val program1 = Program(3,9,8,9,10,9,4,9,99,-1,8)
   assert(runProgram(program1, Input(8)).output(0) == 1)
   assert(runProgram(program1, Input(9)).output(0) == 0)
 
-  val program2 = Array(3,9,7,9,10,9,4,9,99,-1,8)
+  val program2 = Program(3,9,7,9,10,9,4,9,99,-1,8)
   assert(runProgram(program2, Input(1)).output(0) == 1)
   assert(runProgram(program2, Input(8)).output(0) == 0)
 
-  val program3 = Array(3,3,1108,-1,8,3,4,3,99)
+  val program3 = Program(3,3,1108,-1,8,3,4,3,99)
   assert(runProgram(program3, Input(8)).output(0) == 1)
   assert(runProgram(program3, Input(9)).output(0) == 0)
 
-  val program4 = Array(3,3,1107,-1,8,3,4,3,99)
+  val program4 = Program(3,3,1107,-1,8,3,4,3,99)
   assert(runProgram(program4, Input(1)).output(0) == 1)
   assert(runProgram(program4, Input(8)).output(0) == 0)
 
-  val program5 = Array(3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9)
+  val program5 = Program(3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9)
   assert(runProgram(program5, Input(0)).output(0) == 0)
   assert(runProgram(program5, Input(1)).output(0) == 1)
 
-  val program6 = Array(3,3,1105,-1,9,1101,0,0,12,4,12,99,1)
+  val program6 = Program(3,3,1105,-1,9,1101,0,0,12,4,12,99,1)
   assert(runProgram(program6, Input(0)).output(0) == 0)
   assert(runProgram(program6, Input(1)).output(0) == 1)
 
-  val programX = Array(3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
+  val programX = Program(3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
                        1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
                        999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99)
   assert(runProgram(programX, Input(7)).output(0) == 999)

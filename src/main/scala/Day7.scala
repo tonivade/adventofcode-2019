@@ -6,13 +6,13 @@ import scala.annotation.tailrec
 object Day7 {
   import Day5.{runProgram, loadProgram, Input, State, Program}
 
-  def compute(program: Program): List[Int] =
+  def compute(program: Program): List[Long] =
     (0 to 4).permutations.map(sequence(program, _)).toList
 
-  def computeFeedback(program: Program): List[Int] = 
+  def computeFeedback(program: Program): List[Long] = 
     (5 to 9).permutations.map(feedback(program, _)).toList
 
-  def sequence(program: Program, sequence: IndexedSeq[Int]): Int = {
+  def sequence(program: Program, sequence: IndexedSeq[Int]): Long = {
     val outA = runProgram(program, Input(sequence(0), 0))
     val outB = runProgram(program, Input(sequence(1), outA.output(0)))
     val outC = runProgram(program, Input(sequence(2), outB.output(0)))
@@ -21,7 +21,7 @@ object Day7 {
     outE.output(0)
   }
 
-  def feedback(program: Program, sequence: IndexedSeq[Int]): Int = {
+  def feedback(program: Program, sequence: IndexedSeq[Int]): Long = {
     val outA = runProgram(program, Input(sequence(0), 0))
     val outB = runProgram(program, Input(sequence(1), outA.output(0)))
     val outC = runProgram(program, Input(sequence(2), outB.output(0)))
@@ -29,7 +29,7 @@ object Day7 {
     val outE = runProgram(program, Input(sequence(4), outD.output(0)))
 
     @tailrec
-    def loop(stateA: State, stateB: State, stateC: State, stateD: State, stateE: State): Int = {
+    def loop(stateA: State, stateB: State, stateC: State, stateD: State, stateE: State): Long = {
       val newA = stateA.resume(stateE.output)
       val newB = stateB.resume(newA.output)
       val newC = stateC.resume(newB.output)
