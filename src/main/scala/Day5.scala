@@ -46,7 +46,7 @@ object Day5 {
 
     def resume(newInput: Input): State = 
       if (paused)
-        Computer(memory, newInput).run(current)
+        Computer(memory, newInput).run(current, base)
       else 
         throw new IllegalStateException()
   }
