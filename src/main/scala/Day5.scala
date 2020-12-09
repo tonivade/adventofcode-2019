@@ -94,19 +94,23 @@ object Day5 {
       current + 4
     }
 
-    def update(current: Int, value: Int): Unit =
+    def update(current: Int, value: Int): Unit = {
+      require(current >= 0, s"cannot write negative possitions from memory: $current")
       if (memory.length > current)
         memory.update(current, value)
       else {
         val pad = Array.fill[Int]((current - memory.length) + 1)(0)
         memory.append(pad:_*)
       }
+    }
 
-    def get(current: Int): Int =
+    def get(current: Int): Int = {
+      require(current >= 0, s"cannot read negative possitions from memory: $current")
       if (memory.length > current)
         memory(current)
       else
         0
+    }
 
     def mode1(mode: Int) = mode % 10
     def mode2(mode: Int) = mode1(mode / 10)
