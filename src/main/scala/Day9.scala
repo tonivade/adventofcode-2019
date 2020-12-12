@@ -1,6 +1,6 @@
 package adventofcode
 
-object Day9 extends App {
+object Day9Part1 extends App {
   import Day5.{runProgram, loadProgram, Input}
 
   println("Day9 Part1")
@@ -8,6 +8,16 @@ object Day9 extends App {
   val program = loadProgram("input-day9.txt")
 
   println(runProgram(program, Input(1)).output(0))
+}
+
+object Day9Part2 extends App {
+  import Day5.{runProgram, loadProgram, Input}
+
+  println("Day9 Part2")
+
+  val program = loadProgram("input-day9.txt")
+
+  println(runProgram(program, Input(2)).output(0))
 }
 
 object Day9Test extends App {
