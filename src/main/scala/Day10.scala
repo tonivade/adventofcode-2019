@@ -1,6 +1,7 @@
 package adventofcode
 
 import scala.io.Source
+import scala.annotation.tailrec
 
 object Day10 {
 
@@ -11,18 +12,32 @@ object Day10 {
   case class Position(x: Int, y: Int) {
     def move(motion: Motion): Position = 
       Position(x + motion._1, y + motion._2)
+
+    lazy val id = (x * 100) + y
   }
 
   type Motion = (Int, Int)
 
-  case class Matrix(field: Vector[Vector[Space]]) {
+  object MotionOrdering extends Ordering[Motion] {
 
-    def all: Seq[Position] = {
-      for {
-        y <- 0 until field.size
-        x <- 0 until field(0).size
-      } yield Position(x, y)
+    override def compare(a: Motion, b: Motion): Int = {
+      val angleA = angle(a._1, a._2)
+      val angleB = angle(b._1, b._2)
+      angleA.compare(angleB)
     }
+
+    def angle(x: Double, y: Double): Double = {
+      val a = Math.atan2(y, x) * 180 / Math.PI match {
+        case a if a > 0 => a
+        case a if a < 0 => 360 + a
+        case _ => 0
+      }
+
+      (90 + a) % 360
+    }
+  }
+
+  case class Matrix(field: Vector[Vector[Space]]) {
 
     def get(position: Position): Option[Space] =
       if (field.isDefinedAt(position.y) && field(position.y).isDefinedAt(position.x))
@@ -30,32 +45,31 @@ object Day10 {
       else
         None
 
+    def map(f: (Position, Space) => Space): Matrix = {
+      val m = field.zipWithIndex.map {
+        case (row, y) => row.zipWithIndex.map {
+          case (s, x) => f(Position(x, y), s)
+        }
+      }
+
+      Matrix(m)
+    }
+
     def visibleFrom(position: Position): (Position, Int) = {
-      val count = motions.flatMap(search(position, _).toList).count(_ == Asteroid)
+      val count = motions.flatMap(search(position, _).toList).size
      
       (position, count)
     }
 
-    def search(position: Position, motion: Motion): Option[Space] =
-      get(position.move(motion)) match {
-        case Some(Asteroid) => Some(Asteroid)
-        case Some(Empty) => search(position.move(motion), motion)
-        case None => None
-      }
+    def vaporizeFrom(position: Position): Seq[Position] =
+      motions.flatMap(search(position, _).toList)
 
-    def visitAll(position: Position): Seq[Position] = {
-      motions.flatMap(visit(position, _))
-    }
-
-    def notVisited(position: Position): Set[Position] =
-      all.toSet -- visitAll(Position(0, 0))
-
-    def visit(position: Position, motion: Motion): List[Position] = {
+    def search(position: Position, motion: Motion): Option[Position] = {
       val next = position.move(motion)
-
       get(next) match {
-        case Some(_) => next :: visit(next, motion)
-        case None => Nil
+        case Some(Asteroid) => Some(next)
+        case Some(Empty) => search(next, motion)
+        case None => None
       }
     }
 
@@ -66,20 +80,21 @@ object Day10 {
         }
       }.filter(_._2 == Asteroid).map(_._1).toList
 
-    def motions: Seq[Motion] = {
+    def motions: Seq[Motion] = 
+      validMoves.flatMap {
+        case (x, y) => List((x, y), (-x, y), (x, -y), (-x, -y))
+      }.distinct.sorted(MotionOrdering)
+
+    def validMoves: Seq[Motion] = {
       val all = for {
         y <- (0 until field.size)
         x <- (0 until field(0).size)
       } yield (x, y)
 
-      val validMoves = all.filter(valid)
-
-      validMoves.flatMap {
-        case (x, y) => List((x, y), (-x, y), (x, -y), (-x, -y))
-      }.toSet.toList.sorted
+      all.filter(valid)
     }
 
-    def valid(motion: (Int, Int)): Boolean  = {
+    def valid(motion: (Int, Int)): Boolean = {
       motion match {
         case (0, 0) => false
         // down
@@ -97,6 +112,7 @@ object Day10 {
 
     def findAll: List[(Position, Int)] = asteroids.map(visibleFrom(_))
 
+    def location: Position = findAll.maxBy(_._2)._1
     def maxVisibility: Int = findAll.maxBy(_._2)._2
   }
 
@@ -108,6 +124,20 @@ object Day10 {
 
   def parseMatrix(input: String): Matrix = 
     Matrix(input.linesIterator.map(parseLine).toVector)
+
+  def vaporize(m: Matrix, p: Position): Seq[Position] = {
+    val vaporized = m.vaporizeFrom(p)
+
+    val m1 = m.map {
+      case (p, Asteroid) => if (vaporized.contains(p)) Empty else Asteroid
+      case (p, Empty) => Empty
+    }
+
+    if (m1.asteroids.size == 1)
+      vaporized
+    else
+      vaporized ++ vaporize(m1, p)
+  }
 }
 
 object Day10Part1 extends App {
@@ -116,6 +146,16 @@ object Day10Part1 extends App {
   val matrix = parseMatrix(Source.fromResource("input-day10.txt").mkString)
 
   println(matrix.maxVisibility)
+}
+
+object Day10Part2 extends App {
+  import Day10._
+
+  val matrix = parseMatrix(Source.fromResource("input-day10.txt").mkString)
+
+  val position = matrix.location
+
+  println(vaporize(matrix, position)(200 - 1).id)
 }
 
 object Day10Test extends App {
@@ -134,7 +174,6 @@ object Day10Test extends App {
     ....7
     ...87
    */
-  m1.findAll.foreach(println)
   assert(m1.maxVisibility == 8)
 
   val input2 = """......#.#.
@@ -148,7 +187,6 @@ object Day10Test extends App {
                  |##...#..#.
                  |.#....####""".stripMargin
   val m2 = parseMatrix(input2)
-  m2.findAll.foreach(println)
   assert(m2.maxVisibility == 33)
 
   val input3 = """#.#...#.#.
@@ -162,7 +200,6 @@ object Day10Test extends App {
                  |......#...
                  |.####.###.""".stripMargin
   val m3 = parseMatrix(input3)
-  m3.findAll.foreach(println)
   assert(m3.maxVisibility == 35)
 
   val input4 = """.#..#..###
@@ -176,7 +213,6 @@ object Day10Test extends App {
                  |.##...##.#
                  |.....#.#..""".stripMargin
   val m4 = parseMatrix(input4)
-  m4.findAll.foreach(println)
   assert(m4.maxVisibility == 41)
 
   val input5 = """.#..##.###...#######
@@ -200,8 +236,15 @@ object Day10Test extends App {
                  |#.#.#.#####.####.###
                  |###.##.####.##.#..##""".stripMargin
   val m5 = parseMatrix(input5)
-  m5.findAll.foreach(println)
   assert(m5.maxVisibility == 210)
+
+  val input6 = """.#....#####...#..
+                 |##...##.#####..##
+                 |##...#...#.#####.
+                 |..#.....#...###..
+                 |..#.#.....#....##""".stripMargin
+  val m6 = parseMatrix(input6)
+  vaporize(m6, Position(8, 3)).foreach(println)
 
   println("OK")
 }
