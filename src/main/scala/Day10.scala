@@ -17,6 +17,13 @@ object Day10 {
 
   case class Matrix(field: Vector[Vector[Space]]) {
 
+    def all: Seq[Position] = {
+      for {
+        y <- 0 until field.size
+        x <- 0 until field(0).size
+      } yield Position(x, y)
+    }
+
     def get(position: Position): Option[Space] =
       if (field.isDefinedAt(position.y) && field(position.y).isDefinedAt(position.x))
         Some(field(position.y)(position.x))
@@ -36,6 +43,22 @@ object Day10 {
         case None => None
       }
 
+    def visitAll(position: Position): Seq[Position] = {
+      motions.flatMap(visit(position, _))
+    }
+
+    def notVisited(position: Position): Set[Position] =
+      all.toSet -- visitAll(Position(0, 0))
+
+    def visit(position: Position, motion: Motion): List[Position] = {
+      val next = position.move(motion)
+
+      get(next) match {
+        case Some(_) => next :: visit(next, motion)
+        case None => Nil
+      }
+    }
+
     def asteroids: List[Position] =
       field.zipWithIndex.flatMap {
         case (row, y) => row.zipWithIndex.map {
@@ -49,7 +72,9 @@ object Day10 {
         x <- (0 until field(0).size)
       } yield (x, y)
 
-      all.filter(valid).flatMap {
+      val validMoves = all.filter(valid)
+
+      validMoves.flatMap {
         case (x, y) => List((x, y), (-x, y), (x, -y), (-x, -y))
       }.toSet.toList.sorted
     }
@@ -57,21 +82,22 @@ object Day10 {
     def valid(motion: (Int, Int)): Boolean  = {
       motion match {
         case (0, 0) => false
+        // down
         case (0, y) if (y > 1) => false
-        case (x, 0) if (x > 1) => false
+        // right
+        case (x, 0) if (x > 1) => false 
+        // down + right
         case (x, y) if (x == y && x > 1 && y > 1) => false
-        case (x, y) if (x > 1 && y > 1 && Math.max(x, y) % Math.min(x, y) == 0) => false
-        case (x, y) if (primes.contains(x)) => true
-        case (x, y) if (primes.contains(y)) => true
+        case (x, y) if (gcd(x, y) == 1) => true
         case _ => false
       }
     }
 
+    def gcd(a: Int, b: Int): Int = BigInt(a).gcd(b).toInt
+
     def findAll: List[(Position, Int)] = asteroids.map(visibleFrom(_))
 
     def maxVisibility: Int = findAll.maxBy(_._2)._2
-
-    val primes = Set(1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47)
   }
 
   def parseLine(line: String): Vector[Space] =
@@ -82,7 +108,6 @@ object Day10 {
 
   def parseMatrix(input: String): Matrix = 
     Matrix(input.linesIterator.map(parseLine).toVector)
-
 }
 
 object Day10Part1 extends App {
@@ -176,8 +201,7 @@ object Day10Test extends App {
                  |###.##.####.##.#..##""".stripMargin
   val m5 = parseMatrix(input5)
   m5.findAll.foreach(println)
-//  assert(m5.maxVisibility == 210)
-  println(m5.maxVisibility)
+  assert(m5.maxVisibility == 210)
 
   println("OK")
 }
