@@ -186,7 +186,7 @@ object Day5 {
   }
 
   def loadProgram(input: String): Program =
-    Source.fromFile(s"src/main/resources/$input").getLines
+    Source.fromResource(input).getLines
       .flatMap(_.split(',')).map(_.toLong).toArray
 
   var program = loadProgram("input-day5.txt")
