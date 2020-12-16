@@ -7,13 +7,13 @@ import scala.collection.mutable.ArrayBuffer
 
 object Day5 {
 
-  type Program = Array[Long]
+  type Program = Vector[Long]
   type Memory = ArrayBuffer[Long]
   type Input = ListBuffer[Long]
   type Output = ListBuffer[Long]
   
   object Program {
-    def apply(elems: Long*): Program = Array(elems:_*)
+    def apply(elems: Long*): Program = Vector(elems:_*)
   }
 
   val Memory = ArrayBuffer
@@ -187,12 +187,15 @@ object Day5 {
 
   def loadProgram(input: String): Program =
     Source.fromResource(input).getLines
-      .flatMap(_.split(',')).map(_.toLong).toArray
+      .flatMap(_.split(',')).map(_.toLong).toVector
 
   var program = loadProgram("input-day5.txt")
 
   def runProgram(program: Program, input: Input = Input.empty): State = 
     Computer(program.to[ArrayBuffer], input).run()
+
+  def fixProgram(program: Program)(address: Int, value: Long): Program = 
+    Program(program.updated(address, value):_*)
 }
 
 object Day5Part1 extends App {
