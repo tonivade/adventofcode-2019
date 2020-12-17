@@ -99,6 +99,34 @@ object Day13 {
     else 
       next
   }
+
+  @tailrec
+  def playGame(state: State, current: (Score, Seq[Tile])): State = {
+
+    var ball = current._2.find(_.id == Ball).orNull
+    var bar = current._2.find(_.id == HorizontalPaddle).orNull
+
+    val diff = ball.position._1 - bar.position._1
+
+    val move = diff match {
+      case 0 => 0
+      case x if x > 0 => 1
+      case x if x < 0 => -1
+    }
+    
+    println(s"move=$move")
+
+    val next = state.resume(Input(move))
+    val output = parseOutput(next.output)
+    val grid = updateGrid(current, output)
+
+    println(paintGrid(grid))
+    
+    if (next.paused)
+      playGame(next, grid)
+    else 
+      next
+  }
   
   val program = loadProgram("input-day13.txt")
 }
@@ -113,7 +141,7 @@ object Day13Part1 extends App {
 
   println(grid._2.count(_.id == Block))
 
-  println(paintGrid(grid))
+  println(runGame(result, grid).output)
 }
 
 object Day13Part2 extends App {
@@ -127,5 +155,5 @@ object Day13Part2 extends App {
 
   println(paintGrid(grid))
 
-  println(runGame(result, grid).stopped)
+  println(playGame(result, grid).stopped)
 }
